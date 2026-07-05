@@ -124,7 +124,14 @@
             <label><span>你的昵称</span><input id="nameA" maxlength="10" placeholder="例如：小满"></label>
             <label><span>TA 的昵称</span><input id="nameB" maxlength="10" placeholder="例如：朝朝"></label>
           </div>
-          <label><span>在一起的日期</span><input id="startDate" type="date"></label>
+          <div class="profile-date-field">
+            <span>在一起的日期</span>
+            <div class="date-select-row" aria-label="选择在一起的日期">
+              <select id="startYear" aria-label="年份"></select>
+              <select id="startMonth" aria-label="月份"></select>
+              <select id="startDay" aria-label="日期"></select>
+            </div>
+          </div>
           <button class="primary-button full" data-action="save-profile">保存我们的信息</button>
         </section>
 

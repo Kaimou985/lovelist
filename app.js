@@ -75,6 +75,32 @@
     });
   }
 
+  function renderStartDatePicker(value = "") {
+    const [selectedYear = "", selectedMonth = "", selectedDay = ""] = String(value).split("-");
+    const currentYear = new Date().getFullYear();
+    $("#startYear").innerHTML = `<option value="">年份</option>${Array.from({ length: 101 }, (_, index) => currentYear - index).map((year) => `<option value="${year}">${year} 年</option>`).join("")}`;
+    $("#startMonth").innerHTML = `<option value="">月份</option>${Array.from({ length: 12 }, (_, index) => index + 1).map((month) => `<option value="${month}">${month} 月</option>`).join("")}`;
+    $("#startYear").value = selectedYear;
+    $("#startMonth").value = selectedMonth ? String(Number(selectedMonth)) : "";
+    renderStartDayOptions(selectedDay ? String(Number(selectedDay)) : "");
+  }
+
+  function renderStartDayOptions(preferredDay = "") {
+    const year = Number($("#startYear").value);
+    const month = Number($("#startMonth").value);
+    const daysInMonth = year && month ? new Date(year, month, 0).getDate() : 31;
+    $("#startDay").innerHTML = `<option value="">日期</option>${Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => `<option value="${day}">${day} 日</option>`).join("")}`;
+    if (preferredDay && Number(preferredDay) <= daysInMonth) $("#startDay").value = String(Number(preferredDay));
+  }
+
+  function getSelectedStartDate() {
+    const year = $("#startYear").value;
+    const month = $("#startMonth").value;
+    const day = $("#startDay").value;
+    if (!year || !month || !day) return "";
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+
   function openDatabase() {
     return new Promise((resolve, reject) => {
       if (!("indexedDB" in window)) return reject(new Error("IndexedDB unavailable"));
@@ -180,7 +206,7 @@
     $("#coupleGreeting").textContent = nameA && nameB ? `${nameA}和${nameB}` : "我们";
     $("#nameA").value = nameA;
     $("#nameB").value = nameB;
-    $("#startDate").value = state.profile.startDate || "";
+    renderStartDatePicker(state.profile.startDate || "");
     renderPayerOptions();
   }
 
@@ -524,7 +550,7 @@
     if (action === "save-profile") {
       state.profile.nameA = $("#nameA").value.trim();
       state.profile.nameB = $("#nameB").value.trim();
-      state.profile.startDate = $("#startDate").value;
+      state.profile.startDate = getSelectedStartDate();
       await saveState();
       showToast("我们的信息已保存");
       return;
@@ -599,6 +625,9 @@
       renderTasks();
     });
     $("#taskSearch").addEventListener("input", renderTasks);
+
+    $("#startYear").addEventListener("change", () => renderStartDayOptions($("#startDay").value));
+    $("#startMonth").addEventListener("change", () => renderStartDayOptions($("#startDay").value));
 
     document.addEventListener("click", (event) => {
       const mood = event.target.closest("[data-mood]");
