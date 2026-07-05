@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#fff8f5">
+  <meta name="description" content="两个人的恋爱愿望清单、约会回忆与小账本。所有数据仅保存在本机。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="恋爱清单">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>恋爱 100 件小事</title>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow" id="headerEyebrow">两个人的小宇宙</p>
+        <h1 id="pageTitle">恋爱清单</h1>
+      </div>
+      <button class="icon-button profile-button" data-action="open-settings" aria-label="打开设置">
+        <span id="profileInitials">♡</span>
+      </button>
+    </header>
+
+    <main id="mainContent" tabindex="-1">
+      <section class="view active" data-view="home" aria-labelledby="pageTitle">
+        <article class="hero-card">
+          <div class="hero-copy">
+            <span class="soft-pill" id="loveDays">从今天开始</span>
+            <h2><span id="coupleGreeting">我们</span>，把平凡的日子过成纪念日。</h2>
+            <p id="heroHint">还有 100 件小事，等着一起完成。</p>
+          </div>
+          <div class="progress-orbit" id="progressOrbit" aria-label="清单完成进度">
+            <div class="progress-inner">
+              <strong id="progressNumber">0</strong>
+              <span>/ 100</span>
+            </div>
+          </div>
+        </article>
+
+        <div class="quick-grid">
+          <article class="metric-card">
+            <span class="metric-icon coral">✦</span>
+            <span>本月约会</span>
+            <strong id="monthDates">0 <small>次</small></strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-icon gold">¥</span>
+            <span>本月花费</span>
+            <strong id="monthSpend">0 <small>元</small></strong>
+          </article>
+        </div>
+
+        <section class="section-block">
+          <div class="section-heading">
+            <div><span class="section-kicker">今天做什么</span><h2>随机心动提案</h2></div>
+            <button class="text-button" data-action="shuffle-task">换一个</button>
+          </div>
+          <article class="date-idea-card" id="randomTaskCard"></article>
+        </section>
+
+        <section class="section-block">
+          <div class="section-heading">
+            <div><span class="section-kicker">刚刚发生</span><h2>最近回忆</h2></div>
+            <button class="text-button" data-nav="memories">全部</button>
+          </div>
+          <div id="recentMemories" class="memory-preview-list"></div>
+        </section>
+      </section>
+
+      <section class="view" data-view="tasks" aria-label="100 件小事清单">
+        <div class="sticky-tools">
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="taskSearch" type="search" placeholder="搜索想做的小事" autocomplete="off">
+          </label>
+          <div class="filter-row" id="statusFilters">
+            <button class="filter-chip active" data-status="all">全部</button>
+            <button class="filter-chip" data-status="todo">待完成</button>
+            <button class="filter-chip" data-status="done">已完成</button>
+            <button class="filter-chip" data-status="favorite">收藏</button>
+          </div>
+          <div class="category-scroller" id="categoryFilters"></div>
+        </div>
+        <div class="list-summary"><span id="taskResultCount">100 件小事</span><span id="taskFilterHint">慢慢来，爱在过程里</span></div>
+        <div class="task-list" id="taskList"></div>
+      </section>
+
+      <section class="view" data-view="memories" aria-label="回忆时间线">
+        <article class="memory-cover">
+          <div><span class="section-kicker">OUR STORY</span><h2>一起走过的日子</h2><p id="memorySubtitle">每一件完成的小事，都值得被好好记住。</p></div>
+          <span class="cover-heart">♥</span>
+        </article>
+        <div class="memory-toolbar">
+          <span id="memoryCount">0 个珍贵瞬间</span>
+          <button class="secondary-button compact" data-nav="tasks">去完成一件</button>
+        </div>
+        <div id="memoryTimeline" class="memory-timeline"></div>
+      </section>
+
+      <section class="view" data-view="ledger" aria-label="约会账本">
+        <article class="ledger-balance">
+          <div class="ledger-topline"><span>本月约会支出</span><span id="ledgerMonth"></span></div>
+          <strong id="ledgerTotal">¥ 0.00</strong>
+          <div class="ledger-split"><span>共 <b id="expenseCount">0</b> 笔记录</span><span>平均 <b id="expenseAverage">¥0</b></span></div>
+        </article>
+        <div class="category-stats" id="expenseCategories"></div>
+        <div class="section-heading ledger-heading">
+          <div><span class="section-kicker">约会流水</span><h2>最近记录</h2></div>
+          <button class="primary-button compact" data-action="open-expense">＋ 记一笔</button>
+        </div>
+        <div id="expenseList" class="expense-list"></div>
+      </section>
+
+      <section class="view" data-view="settings" aria-label="设置">
+        <section class="settings-card couple-editor">
+          <div class="settings-title"><span class="settings-icon">♥</span><div><h2>我们的信息</h2><p>只保存在这台设备上</p></div></div>
+          <div class="form-grid two-col">
+            <label><span>你的昵称</span><input id="nameA" maxlength="10" placeholder="例如：小满"></label>
+            <label><span>TA 的昵称</span><input id="nameB" maxlength="10" placeholder="例如：朝朝"></label>
+          </div>
+          <label><span>在一起的日期</span><input id="startDate" type="date"></label>
+          <button class="primary-button full" data-action="save-profile">保存我们的信息</button>
+        </section>
+
+        <section class="settings-card">
+          <div class="settings-title"><span class="settings-icon peach">⇩</span><div><h2>数据备份</h2><p id="backupHint">建议每月导出一次</p></div></div>
+          <div class="settings-actions">
+            <button data-action="export-data"><span>导出全部数据</span><b>JSON ›</b></button>
+            <label class="settings-file"><span>从备份恢复</span><b>选择文件 ›</b><input id="importFile" type="file" accept="application/json,.json"></label>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="settings-title"><span class="settings-icon green">⌂</span><div><h2>安装与离线</h2><p id="installStatus">检查安装状态中</p></div></div>
+          <button class="secondary-button full" data-action="show-install">查看安装方法</button>
+        </section>
+
+        <section class="settings-card danger-zone">
+          <div><h2>重新开始</h2><p>清除所有完成记录、照片和账目</p></div>
+          <button class="danger-button" data-action="reset-data">清除数据</button>
+        </section>
+        <p class="privacy-note">离线优先 · 无账号 · 无广告 · 数据仅存本机</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="主导航">
+      <button class="nav-item active" data-nav="home"><span class="nav-icon">⌂</span><span>首页</span></button>
+      <button class="nav-item" data-nav="tasks"><span class="nav-icon">✓</span><span>清单</span></button>
+      <button class="nav-item nav-memory" data-nav="memories"><span class="nav-heart">♥</span><span>回忆</span></button>
+      <button class="nav-item" data-nav="ledger"><span class="nav-icon">¥</span><span>账本</span></button>
+      <button class="nav-item" data-nav="settings"><span class="nav-icon">☻</span><span>我们</span></button>
+    </nav>
+  </div>
+
+  <div class="modal-backdrop" id="taskModal" hidden>
+    <div class="bottom-sheet task-sheet" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" data-action="close-modal" aria-label="关闭">×</button>
+      <div id="taskModalBody"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="expenseModal" hidden>
+    <form class="bottom-sheet" id="expenseForm" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+      <div class="sheet-handle"></div>
+      <button type="button" class="sheet-close" data-action="close-modal" aria-label="关闭">×</button>
+      <span class="section-kicker">LOVE LEDGER</span>
+      <h2 id="expenseModalTitle">记一笔约会花费</h2>
+      <label><span>金额</span><div class="money-input"><b>¥</b><input id="expenseAmount" inputmode="decimal" required placeholder="0.00"></div></label>
+      <div class="form-grid two-col">
+        <label><span>分类</span><select id="expenseCategory"><option>餐饮</option><option>交通</option><option>娱乐</option><option>礼物</option><option>住宿</option><option>其他</option></select></label>
+        <label><span>付款人</span><select id="expensePayer"><option value="共同">共同</option></select></label>
+      </div>
+      <label><span>关联小事（可选）</span><select id="expenseTask"><option value="">不关联</option></select></label>
+      <div class="form-grid two-col">
+        <label><span>日期</span><input id="expenseDate" type="date" required></label>
+        <label><span>备注</span><input id="expenseNote" maxlength="30" placeholder="例如：晚餐"></label>
+      </div>
+      <button class="primary-button full" type="submit">保存这笔记录</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="installModal" hidden>
+    <div class="bottom-sheet install-sheet" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" data-action="close-modal" aria-label="关闭">×</button>
+      <span class="section-kicker">ADD TO HOME SCREEN</span>
+      <h2 id="installTitle">安装到手机</h2>
+      <ol class="install-steps" id="installSteps"></ol>
+      <p class="install-note" id="installNote">首次安装需要联网。请不要使用无痕浏览，否则本地数据不会长期保留。</p>
+      <button class="primary-button full" data-action="close-modal">知道了</button>
+    </div>
+  </div>
+
+  <div class="onboarding" id="onboarding" hidden>
+    <div class="onboarding-art"><span>♥</span><i></i><i></i><i></i></div>
+    <span class="soft-pill">只属于两个人</span>
+    <h1>恋爱 100 件小事</h1>
+    <p>把想一起做的事，变成以后翻看时会微笑的回忆。</p>
+    <div class="onboarding-fields">
+      <input id="onboardNameA" maxlength="10" placeholder="你的昵称">
+      <span>♥</span>
+      <input id="onboardNameB" maxlength="10" placeholder="TA 的昵称">
+    </div>
+    <button class="primary-button full" data-action="finish-onboarding">开始我们的清单</button>
+    <button class="text-button" data-action="skip-onboarding">先逛逛看</button>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./tasks.js" defer></script>
+  <script src="./app.js" defer></script>
+</body>
+</html>
