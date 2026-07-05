@@ -1,4 +1,4 @@
-const CACHE_VERSION = "love100-v1.0.1";
+const CACHE_VERSION = "love100-v1.2.0";
 const APP_SHELL = [
   "./",
   "./index.html",

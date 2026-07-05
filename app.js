@@ -22,6 +22,8 @@
     profile: { nameA: "", nameB: "", startDate: "" },
     completions: {},
     favorites: [],
+    taskOverrides: {},
+    backgroundImage: "",
     expenses: [],
     lastBackupAt: ""
   };
@@ -32,8 +34,9 @@
   let taskCategory = "全部";
   let randomTaskId = 1;
   let currentTaskId = null;
+  let currentEditingTaskId = null;
+  let taskEditMode = false;
   let pendingPhoto = "";
-  let deferredInstallPrompt = null;
   let toastTimer = null;
   let db = null;
 
@@ -108,6 +111,8 @@
       profile: { ...DEFAULT_STATE.profile, ...(input.profile || {}) },
       completions: input.completions && typeof input.completions === "object" ? input.completions : {},
       favorites: Array.isArray(input.favorites) ? input.favorites.map(Number).filter(Number.isFinite) : [],
+      taskOverrides: input.taskOverrides && typeof input.taskOverrides === "object" ? input.taskOverrides : {},
+      backgroundImage: typeof input.backgroundImage === "string" && input.backgroundImage.startsWith("data:image/") ? input.backgroundImage : "",
       expenses: Array.isArray(input.expenses) ? input.expenses : []
     };
   }
@@ -134,7 +139,13 @@
     if (render) renderAll();
   }
 
-  function getTask(id) { return TASKS.find((task) => task.id === Number(id)); }
+  function getBaseTask(id) { return TASKS.find((task) => task.id === Number(id)); }
+  function getTask(id) {
+    const base = getBaseTask(id);
+    if (!base) return null;
+    return { ...base, ...(state.taskOverrides[base.id] || {}), id: base.id };
+  }
+  function getAllTasks() { return TASKS.map((task) => getTask(task.id)); }
   function getCompletedEntries() {
     return Object.entries(state.completions)
       .map(([id, record]) => ({ task: getTask(id), record }))
@@ -185,9 +196,9 @@
       const startDate = new Date(`${start}T00:00:00`);
       const today = new Date(`${localDateString()}T00:00:00`);
       const days = Math.max(1, Math.floor((today - startDate) / 86400000) + 1);
-      $("#loveDays").textContent = `相爱第 ${days} 天`;
+      $("#loveDays").innerHTML = `相恋第 <strong>${days}</strong> 天`;
     } else {
-      $("#loveDays").textContent = "从今天开始";
+      $("#loveDays").textContent = "设置相恋日期";
     }
 
     const month = localDateString().slice(0, 7);
@@ -207,8 +218,9 @@
   }
 
   function chooseRandomTask() {
-    const unfinished = TASKS.filter((task) => !state.completions[task.id]);
-    const pool = unfinished.length ? unfinished : TASKS;
+    const allTasks = getAllTasks();
+    const unfinished = allTasks.filter((task) => !state.completions[task.id]);
+    const pool = unfinished.length ? unfinished : allTasks;
     let next = pool[Math.floor(Math.random() * pool.length)];
     if (pool.length > 1) while (next.id === randomTaskId) next = pool[Math.floor(Math.random() * pool.length)];
     randomTaskId = next.id;
@@ -216,7 +228,7 @@
   }
 
   function renderRandomTask() {
-    const task = getTask(randomTaskId) || TASKS[0];
+    const task = getTask(randomTaskId) || getAllTasks()[0];
     if (!task) return;
     const favorite = state.favorites.includes(task.id);
     $("#randomTaskCard").innerHTML = `
@@ -225,12 +237,16 @@
   }
 
   function renderCategoryFilters() {
-    $("#categoryFilters").innerHTML = CATEGORIES.map((category) => `<button class="category-chip ${taskCategory === category ? "active" : ""}" data-category="${category}">${category}</button>`).join("");
+    const allTasks = getAllTasks();
+    $("#categoryFilters").innerHTML = CATEGORIES.map((category) => {
+      const count = category === "全部" ? allTasks.length : allTasks.filter((task) => task.c === category).length;
+      return `<button class="category-chip ${taskCategory === category ? "active" : ""}" data-category="${category}"><span>${category}</span><b>${count}</b></button>`;
+    }).join("");
   }
 
   function filteredTasks() {
     const query = $("#taskSearch")?.value.trim().toLowerCase() || "";
-    return TASKS.filter((task) => {
+    return getAllTasks().filter((task) => {
       const done = Boolean(state.completions[task.id]);
       const statusMatch = taskStatus === "all" || (taskStatus === "done" && done) || (taskStatus === "todo" && !done) || (taskStatus === "favorite" && state.favorites.includes(task.id));
       const categoryMatch = taskCategory === "全部" || task.c === taskCategory;
@@ -244,13 +260,16 @@
     const tasks = filteredTasks();
     $("#taskResultCount").textContent = `${tasks.length} 件小事`;
     $("#taskFilterHint").textContent = taskCategory === "全部" ? "慢慢来，爱在过程里" : taskCategory;
+    const editButton = $("[data-action='toggle-edit-mode']");
+    editButton.textContent = taskEditMode ? "完成编辑" : "编辑清单";
+    editButton.classList.toggle("active", taskEditMode);
     $("#taskList").innerHTML = tasks.length ? tasks.map((task) => {
       const done = Boolean(state.completions[task.id]);
       const favorite = state.favorites.includes(task.id);
-      return `<article class="task-card ${done ? "done" : ""}" data-task-id="${task.id}">
+      return `<article class="task-card ${done ? "done" : ""} ${taskEditMode ? "editing" : ""}" data-task-id="${task.id}">
         <div class="task-number">${done ? "✓" : String(task.id).padStart(2, "0")}</div>
         <div class="task-content"><h3>${escapeHtml(task.t)}${favorite ? `<span class="fav-dot">♥</span>` : ""}</h3><p><span>${escapeHtml(task.c)}</span><span>${escapeHtml(task.b)}预算</span><span>${escapeHtml(task.h)}</span></p></div>
-        <button class="task-check" data-task-id="${task.id}" aria-label="${done ? "查看完成记录" : "标记完成"}">✓</button>
+        ${taskEditMode ? `<button class="task-edit" data-action="edit-task" data-task-id="${task.id}" aria-label="修改清单内容">✎</button>` : `<button class="task-check" data-task-id="${task.id}" aria-label="${done ? "查看完成记录" : "标记完成"}">✓</button>`}
       </article>`;
     }).join("") : `<div class="no-results"><b>没有找到匹配的小事</b><span>换个关键词或筛选条件试试</span></div>`;
   }
@@ -300,27 +319,18 @@
 
   function renderSettings() {
     $("#backupHint").textContent = state.lastBackupAt ? `上次导出：${formatDate(state.lastBackupAt.slice(0, 10))}` : "建议每月导出一次";
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-    $("#installStatus").textContent = standalone ? "已从主屏幕运行，可离线使用" : "添加到主屏幕后可像 App 一样使用";
+    applyCustomBackground();
+    $("#backgroundPreview").innerHTML = state.backgroundImage
+      ? `<img src="${state.backgroundImage}" alt="当前页面背景预览">`
+      : `<span>尚未设置自定义背景</span>`;
+    $("#removeBackground").hidden = !state.backgroundImage;
   }
 
-  function renderInstallGuide() {
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    if (isAndroid) {
-      $("#installTitle").textContent = "安装到安卓手机";
-      $("#installSteps").innerHTML = `
-        <li><b>1</b><div>使用 Chrome 打开本页面</div></li>
-        <li><b>2</b><div>点击右上角的“三点”菜单 <strong>⋮</strong></div></li>
-        <li><b>3</b><div>选择“安装应用”或“添加到主屏幕”</div></li>
-        <li><b>4</b><div>确认安装，再从桌面图标打开一次</div></li>`;
-    } else {
-      $("#installTitle").textContent = "安装到 iPhone";
-      $("#installSteps").innerHTML = `
-        <li><b>1</b><div>使用 Safari 打开本页面</div></li>
-        <li><b>2</b><div>点击底部工具栏的“分享”按钮 <strong>□↑</strong></div></li>
-        <li><b>3</b><div>向下滑动，选择“添加到主屏幕”</div></li>
-        <li><b>4</b><div>从桌面打开一次，之后即可离线使用</div></li>`;
-    }
+  function applyCustomBackground() {
+    const hasBackground = Boolean(state.backgroundImage);
+    document.body.classList.toggle("has-custom-background", hasBackground);
+    if (hasBackground) document.body.style.setProperty("--custom-background", `url("${state.backgroundImage}")`);
+    else document.body.style.removeProperty("--custom-background");
   }
 
   function renderPayerOptions() {
@@ -355,7 +365,7 @@
       ${record ? `<div class="completed-banner">✓ 已在 ${formatDate(record.date)} 点亮这件小事</div>` : ""}
       <form class="completion-form" id="completionForm">
         <h3>${record ? "编辑这段回忆" : "完成后，留下一点回忆"}</h3>
-        <div class="form-grid two-col"><label><span>完成日期</span><input id="completionDate" type="date" required value="${record?.date || localDateString()}"></label><label><span>地点</span><input id="completionLocation" maxlength="30" placeholder="在哪里发生" value="${escapeHtml(record?.location || "")}"></label></div>
+        <div class="form-grid two-col date-row"><label><span>完成日期</span><input id="completionDate" type="date" required value="${record?.date || localDateString()}"></label><label><span>地点</span><input id="completionLocation" maxlength="30" placeholder="在哪里发生" value="${escapeHtml(record?.location || "")}"></label></div>
         <label><span>那天的心情</span><div class="mood-row">${["🥰","😊","😆","🥹","✨"].map((mood) => `<button type="button" class="mood-button ${record?.mood === mood ? "active" : ""}" data-mood="${mood}">${mood}</button>`).join("")}</div></label>
         <label><span>想说的话</span><textarea id="completionNote" rows="3" maxlength="180" placeholder="记录一句当时的心情……">${escapeHtml(record?.note || "")}</textarea></label>
         <label class="photo-picker"><span>${pendingPhoto ? "更换照片" : "＋ 添加一张回忆照片"}</span><input id="completionPhoto" type="file" accept="image/*"></label>
@@ -367,6 +377,23 @@
     document.body.style.overflow = "hidden";
   }
 
+  function openTaskEditor(id) {
+    const task = getTask(id);
+    if (!task) return;
+    currentEditingTaskId = task.id;
+    $("#editTaskName").value = task.t;
+    $("#editTaskDescription").value = task.d;
+    $("#editTaskBudget").value = task.b;
+    $("#editTaskDuration").value = task.h;
+    $("#editTaskSeason").value = task.s;
+    $("#editTaskCategory").innerHTML = CATEGORIES.slice(1).map((category) => `<option value="${category}">${category}</option>`).join("");
+    $("#editTaskCategory").value = task.c;
+    $("[data-action='restore-task']").hidden = !state.taskOverrides[task.id];
+    $("#editTaskModal").hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(() => $("#editTaskName").focus(), 100);
+  }
+
   function photoPreviewHtml() {
     return pendingPhoto ? `<img src="${pendingPhoto}" alt="待保存的回忆照片"><button type="button" data-action="remove-photo" aria-label="移除照片">×</button>` : "";
   }
@@ -375,6 +402,7 @@
     $$(".modal-backdrop").forEach((modal) => { modal.hidden = true; });
     document.body.style.overflow = "";
     currentTaskId = null;
+    currentEditingTaskId = null;
     pendingPhoto = "";
   }
 
@@ -387,7 +415,7 @@
     if (!$("#taskModal").hidden && currentTaskId === taskId) openTaskModal(taskId);
   }
 
-  async function compressPhoto(file) {
+  async function compressPhoto(file, max = 1400, quality = 0.78) {
     if (!file.type.startsWith("image/")) throw new Error("请选择图片文件");
     if (file.size > 20 * 1024 * 1024) throw new Error("图片不能超过 20MB");
     const dataUrl = await new Promise((resolve, reject) => {
@@ -402,18 +430,17 @@
       img.onerror = reject;
       img.src = dataUrl;
     });
-    const max = 1400;
     const scale = Math.min(1, max / Math.max(image.width, image.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(image.width * scale));
     canvas.height = Math.max(1, Math.round(image.height * scale));
     canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.78);
+    return canvas.toDataURL("image/jpeg", quality);
   }
 
   function openExpenseModal(taskId = "") {
     const select = $("#expenseTask");
-    select.innerHTML = `<option value="">不关联</option>${TASKS.map((task) => `<option value="${task.id}">${String(task.id).padStart(2,"0")} · ${escapeHtml(task.t)}</option>`).join("")}`;
+    select.innerHTML = `<option value="">不关联</option>${getAllTasks().map((task) => `<option value="${task.id}">${String(task.id).padStart(2,"0")} · ${escapeHtml(task.t)}</option>`).join("")}`;
     select.value = taskId ? String(taskId) : "";
     $("#expenseDate").value = localDateString();
     $("#expenseAmount").value = "";
@@ -468,21 +495,32 @@
     if (action === "shuffle-task") return chooseRandomTask();
     if (action === "close-modal") return closeModals();
     if (action === "open-expense") return openExpenseModal();
-    if (action === "toggle-favorite") return toggleFavorite(target.dataset.taskId);
-    if (action === "remove-photo") { pendingPhoto = ""; $("#photoPreview").innerHTML = ""; return; }
-    if (action === "show-install") {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        const result = await deferredInstallPrompt.userChoice;
-        if (result.outcome === "accepted") showToast("已开始安装");
-        deferredInstallPrompt = null;
-      } else {
-        renderInstallGuide();
-        $("#installModal").hidden = false;
-        document.body.style.overflow = "hidden";
-      }
+    if (action === "toggle-edit-mode") {
+      taskEditMode = !taskEditMode;
+      renderTasks();
+      showToast(taskEditMode ? "点击清单右侧的铅笔进行修改" : "清单编辑已完成");
       return;
     }
+    if (action === "edit-task") return openTaskEditor(target.dataset.taskId);
+    if (action === "restore-task") {
+      const taskId = currentEditingTaskId;
+      if (!taskId || !state.taskOverrides[taskId]) return;
+      if (!confirm("恢复这一项的默认标题和内容？完成记录不会受到影响。")) return;
+      delete state.taskOverrides[taskId];
+      closeModals();
+      await saveState();
+      showToast("已恢复默认内容");
+      return;
+    }
+    if (action === "remove-background") {
+      if (!state.backgroundImage) return;
+      state.backgroundImage = "";
+      await saveState();
+      showToast("已恢复默认背景");
+      return;
+    }
+    if (action === "toggle-favorite") return toggleFavorite(target.dataset.taskId);
+    if (action === "remove-photo") { pendingPhoto = ""; $("#photoPreview").innerHTML = ""; return; }
     if (action === "save-profile") {
       state.profile.nameA = $("#nameA").value.trim();
       state.profile.nameB = $("#nameB").value.trim();
@@ -534,7 +572,11 @@
       const actionNode = event.target.closest("[data-action]");
       if (actionNode) { event.preventDefault(); await handleAction(actionNode.dataset.action, actionNode); return; }
       const taskNode = event.target.closest("[data-task-id]");
-      if (taskNode) { event.preventDefault(); openTaskModal(taskNode.dataset.taskId); }
+      if (taskNode) {
+        event.preventDefault();
+        if (taskEditMode) openTaskEditor(taskNode.dataset.taskId);
+        else openTaskModal(taskNode.dataset.taskId);
+      }
     });
 
     document.addEventListener("keydown", (event) => {
@@ -573,6 +615,18 @@
           showToast("照片已准备好，保存后生效");
         } catch (error) { showToast(error.message || "照片处理失败"); }
       }
+      if (event.target.id === "backgroundFile" && event.target.files[0]) {
+        try {
+          showToast("正在处理背景图片…");
+          state.backgroundImage = await compressPhoto(event.target.files[0], 1920, 0.8);
+          await saveState();
+          showToast("页面背景已更新");
+        } catch (error) {
+          showToast(error.message || "背景图片处理失败");
+        } finally {
+          event.target.value = "";
+        }
+      }
       if (event.target.id === "importFile" && event.target.files[0]) await importData(event.target.files[0]);
     });
 
@@ -610,11 +664,25 @@
         await saveState();
         showToast("账目已保存");
       }
+      if (event.target.id === "editTaskForm") {
+        event.preventDefault();
+        const taskId = currentEditingTaskId;
+        if (!taskId || !getBaseTask(taskId)) return;
+        state.taskOverrides[taskId] = {
+          t: $("#editTaskName").value.trim(),
+          c: $("#editTaskCategory").value,
+          d: $("#editTaskDescription").value.trim(),
+          b: $("#editTaskBudget").value.trim() || "自定",
+          h: $("#editTaskDuration").value.trim() || "自定",
+          s: $("#editTaskSeason").value.trim() || "全年"
+        };
+        closeModals();
+        await saveState();
+        showToast("清单内容已更新");
+      }
     });
 
     $$(".modal-backdrop").forEach((modal) => modal.addEventListener("click", (event) => { if (event.target === modal) closeModals(); }));
-    window.addEventListener("beforeinstallprompt", (event) => { event.preventDefault(); deferredInstallPrompt = event; renderSettings(); });
-    window.addEventListener("appinstalled", () => { deferredInstallPrompt = null; renderSettings(); showToast("已安装到主屏幕"); });
   }
 
   async function setupOffline() {
@@ -630,7 +698,7 @@
   async function init() {
     bindEvents();
     await loadState();
-    randomTaskId = TASKS.find((task) => !state.completions[task.id])?.id || 1;
+    randomTaskId = getAllTasks().find((task) => !state.completions[task.id])?.id || 1;
     $("#onboarding").hidden = state.onboarded;
     renderAll();
     setupOffline();

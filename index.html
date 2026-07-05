@@ -30,7 +30,7 @@
       <section class="view active" data-view="home" aria-labelledby="pageTitle">
         <article class="hero-card">
           <div class="hero-copy">
-            <span class="soft-pill" id="loveDays">从今天开始</span>
+            <span class="soft-pill love-days-pill" id="loveDays">设置相恋日期</span>
             <h2><span id="coupleGreeting">我们</span>，把平凡的日子过成纪念日。</h2>
             <p id="heroHint">还有 100 件小事，等着一起完成。</p>
           </div>
@@ -84,9 +84,10 @@
             <button class="filter-chip" data-status="done">已完成</button>
             <button class="filter-chip" data-status="favorite">收藏</button>
           </div>
+          <div class="category-strip-head"><span>全部分类</span><small>左右滑动选择 ›</small></div>
           <div class="category-scroller" id="categoryFilters"></div>
         </div>
-        <div class="list-summary"><span id="taskResultCount">100 件小事</span><span id="taskFilterHint">慢慢来，爱在过程里</span></div>
+        <div class="list-summary"><div><span id="taskResultCount">100 件小事</span><span id="taskFilterHint">慢慢来，爱在过程里</span></div><button class="edit-list-button" data-action="toggle-edit-mode">编辑清单</button></div>
         <div class="task-list" id="taskList"></div>
       </section>
 
@@ -127,17 +128,22 @@
           <button class="primary-button full" data-action="save-profile">保存我们的信息</button>
         </section>
 
+        <section class="settings-card background-settings">
+          <div class="settings-title"><span class="settings-icon background-icon">▧</span><div><h2>页面背景</h2><p>从相册选择一张属于你们的照片</p></div></div>
+          <div class="background-preview" id="backgroundPreview"><span>尚未设置自定义背景</span></div>
+          <div class="background-actions">
+            <label class="background-upload"><span>从相册选择图片</span><input id="backgroundFile" type="file" accept="image/*"></label>
+            <button class="remove-background" data-action="remove-background" id="removeBackground" hidden>恢复默认</button>
+          </div>
+          <p class="background-tip">图片会自动压缩并仅保存在当前设备中</p>
+        </section>
+
         <section class="settings-card">
           <div class="settings-title"><span class="settings-icon peach">⇩</span><div><h2>数据备份</h2><p id="backupHint">建议每月导出一次</p></div></div>
           <div class="settings-actions">
             <button data-action="export-data"><span>导出全部数据</span><b>JSON ›</b></button>
             <label class="settings-file"><span>从备份恢复</span><b>选择文件 ›</b><input id="importFile" type="file" accept="application/json,.json"></label>
           </div>
-        </section>
-
-        <section class="settings-card">
-          <div class="settings-title"><span class="settings-icon green">⌂</span><div><h2>安装与离线</h2><p id="installStatus">检查安装状态中</p></div></div>
-          <button class="secondary-button full" data-action="show-install">查看安装方法</button>
         </section>
 
         <section class="settings-card danger-zone">
@@ -177,7 +183,7 @@
         <label><span>付款人</span><select id="expensePayer"><option value="共同">共同</option></select></label>
       </div>
       <label><span>关联小事（可选）</span><select id="expenseTask"><option value="">不关联</option></select></label>
-      <div class="form-grid two-col">
+      <div class="form-grid two-col date-row">
         <label><span>日期</span><input id="expenseDate" type="date" required></label>
         <label><span>备注</span><input id="expenseNote" maxlength="30" placeholder="例如：晚餐"></label>
       </div>
@@ -185,16 +191,23 @@
     </form>
   </div>
 
-  <div class="modal-backdrop" id="installModal" hidden>
-    <div class="bottom-sheet install-sheet" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+  <div class="modal-backdrop" id="editTaskModal" hidden>
+    <form class="bottom-sheet edit-task-sheet" id="editTaskForm" role="dialog" aria-modal="true" aria-labelledby="editTaskTitle">
       <div class="sheet-handle"></div>
-      <button class="sheet-close" data-action="close-modal" aria-label="关闭">×</button>
-      <span class="section-kicker">ADD TO HOME SCREEN</span>
-      <h2 id="installTitle">安装到手机</h2>
-      <ol class="install-steps" id="installSteps"></ol>
-      <p class="install-note" id="installNote">首次安装需要联网。请不要使用无痕浏览，否则本地数据不会长期保留。</p>
-      <button class="primary-button full" data-action="close-modal">知道了</button>
-    </div>
+      <button type="button" class="sheet-close" data-action="close-modal" aria-label="关闭">×</button>
+      <span class="section-kicker">CUSTOMIZE YOUR LIST</span>
+      <h2 id="editTaskTitle">修改这件小事</h2>
+      <label><span>清单标题</span><input id="editTaskName" maxlength="30" required placeholder="想一起完成什么"></label>
+      <label><span>分类</span><select id="editTaskCategory"></select></label>
+      <label><span>内容说明</span><textarea id="editTaskDescription" rows="3" maxlength="160" placeholder="写下这件事的具体内容"></textarea></label>
+      <div class="form-grid edit-meta-grid">
+        <label><span>预算</span><input id="editTaskBudget" maxlength="8" placeholder="例如：低"></label>
+        <label><span>预计用时</span><input id="editTaskDuration" maxlength="10" placeholder="例如：2小时"></label>
+        <label><span>适合时间</span><input id="editTaskSeason" maxlength="10" placeholder="例如：春秋"></label>
+      </div>
+      <button class="primary-button full" type="submit">保存修改</button>
+      <button class="restore-task-button" type="button" data-action="restore-task">恢复这一项的默认内容</button>
+    </form>
   </div>
 
   <div class="onboarding" id="onboarding" hidden>
