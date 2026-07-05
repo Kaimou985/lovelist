@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="恋爱清单">
-  <link rel="manifest" href="./manifest.webmanifest?v=1.2.2">
+  <link rel="manifest" href="./manifest.webmanifest?v=1.2.3">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=1.2.2">
+  <link rel="stylesheet" href="./styles.css?v=1.2.3">
   <title>恋爱 100 件小事</title>
 </head>
 <body>
@@ -142,6 +142,11 @@
             <label class="background-upload"><span>从相册选择图片</span><input id="backgroundFile" type="file" accept="image/*"></label>
             <button class="remove-background" data-action="remove-background" id="removeBackground" hidden>恢复默认</button>
           </div>
+          <div class="background-opacity-control" id="backgroundOpacityControl">
+            <div><span>页面透明度</span><output id="backgroundOpacityValue" for="backgroundOpacity">22%</output></div>
+            <input id="backgroundOpacity" type="range" min="0" max="80" step="1" value="22" aria-label="调节页面透明度">
+            <div class="opacity-labels"><small>底色更实</small><small>背景更明显</small></div>
+          </div>
           <p class="background-tip">图片会自动压缩并仅保存在当前设备中</p>
         </section>
 
@@ -232,7 +237,7 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./tasks.js?v=1.2.2" defer></script>
-  <script src="./app.js?v=1.2.2" defer></script>
+  <script src="./tasks.js?v=1.2.3" defer></script>
+  <script src="./app.js?v=1.2.3" defer></script>
 </body>
 </html>

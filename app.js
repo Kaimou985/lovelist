@@ -24,6 +24,7 @@
     favorites: [],
     taskOverrides: {},
     backgroundImage: "",
+    backgroundTransparency: 22,
     expenses: [],
     lastBackupAt: ""
   };
@@ -139,6 +140,7 @@
       favorites: Array.isArray(input.favorites) ? input.favorites.map(Number).filter(Number.isFinite) : [],
       taskOverrides: input.taskOverrides && typeof input.taskOverrides === "object" ? input.taskOverrides : {},
       backgroundImage: typeof input.backgroundImage === "string" && input.backgroundImage.startsWith("data:image/") ? input.backgroundImage : "",
+      backgroundTransparency: Math.min(80, Math.max(0, Number(input.backgroundTransparency ?? 22) || 0)),
       expenses: Array.isArray(input.expenses) ? input.expenses : []
     };
   }
@@ -350,13 +352,28 @@
       ? `<img src="${state.backgroundImage}" alt="当前页面背景预览">`
       : `<span>尚未设置自定义背景</span>`;
     $("#removeBackground").hidden = !state.backgroundImage;
+    $("#backgroundOpacity").value = String(state.backgroundTransparency);
+    $("#backgroundOpacity").disabled = !state.backgroundImage;
+    $("#backgroundOpacityValue").textContent = `${state.backgroundTransparency}%`;
+    $("#backgroundOpacityControl").classList.toggle("disabled", !state.backgroundImage);
   }
 
   function applyCustomBackground() {
     const hasBackground = Boolean(state.backgroundImage);
+    const transparency = Math.min(80, Math.max(0, Number(state.backgroundTransparency) || 0));
+    const overlayAlpha = Math.max(0.2, 1 - transparency / 100);
     document.body.classList.toggle("has-custom-background", hasBackground);
-    if (hasBackground) document.body.style.setProperty("--custom-background", `url("${state.backgroundImage}")`);
-    else document.body.style.removeProperty("--custom-background");
+    if (hasBackground) {
+      document.body.style.setProperty("--custom-background", `url("${state.backgroundImage}")`);
+      document.body.style.setProperty("--page-overlay-alpha", overlayAlpha.toFixed(2));
+      document.body.style.setProperty("--topbar-overlay-alpha", Math.min(0.98, overlayAlpha + 0.1).toFixed(2));
+      document.body.style.setProperty("--surface-overlay-alpha", Math.max(0.68, 0.96 - transparency * 0.0035).toFixed(2));
+    } else {
+      document.body.style.removeProperty("--custom-background");
+      document.body.style.removeProperty("--page-overlay-alpha");
+      document.body.style.removeProperty("--topbar-overlay-alpha");
+      document.body.style.removeProperty("--surface-overlay-alpha");
+    }
   }
 
   function renderPayerOptions() {
@@ -625,6 +642,16 @@
       renderTasks();
     });
     $("#taskSearch").addEventListener("input", renderTasks);
+
+    $("#backgroundOpacity").addEventListener("input", (event) => {
+      state.backgroundTransparency = Number(event.target.value);
+      $("#backgroundOpacityValue").textContent = `${state.backgroundTransparency}%`;
+      applyCustomBackground();
+    });
+    $("#backgroundOpacity").addEventListener("change", async () => {
+      await saveState({ render: false });
+      showToast("页面透明度已保存");
+    });
 
     $("#startYear").addEventListener("change", () => renderStartDayOptions($("#startDay").value));
     $("#startMonth").addEventListener("change", () => renderStartDayOptions($("#startDay").value));

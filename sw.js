@@ -1,11 +1,11 @@
-const CACHE_VERSION = "love100-v1.2.2";
+const CACHE_VERSION = "love100-v1.2.3";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=1.2.2",
-  "./tasks.js?v=1.2.2",
-  "./app.js?v=1.2.2",
-  "./manifest.webmanifest?v=1.2.2",
+  "./styles.css?v=1.2.3",
+  "./tasks.js?v=1.2.3",
+  "./app.js?v=1.2.3",
+  "./manifest.webmanifest?v=1.2.3",
   "./icons/icon.svg",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
