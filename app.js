@@ -716,7 +716,7 @@
 
   async function setupOffline() {
     if ("serviceWorker" in navigator) {
-      try { await navigator.serviceWorker.register("./sw.js", { scope: "./" }); }
+      try { await navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" }); }
       catch (error) { console.warn("Service Worker registration failed", error); }
     }
     if (navigator.storage?.persist) {

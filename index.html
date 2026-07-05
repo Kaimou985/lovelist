@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="恋爱清单">
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="./manifest.webmanifest?v=1.2.2">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=1.2.2">
   <title>恋爱 100 件小事</title>
 </head>
 <body>
@@ -127,9 +127,9 @@
           <div class="profile-date-field">
             <span>在一起的日期</span>
             <div class="date-select-row" aria-label="选择在一起的日期">
-              <select id="startYear" aria-label="年份"></select>
-              <select id="startMonth" aria-label="月份"></select>
-              <select id="startDay" aria-label="日期"></select>
+              <select id="startYear" aria-label="年份"><option value="">年份</option></select>
+              <select id="startMonth" aria-label="月份"><option value="">月份</option></select>
+              <select id="startDay" aria-label="日期"><option value="">日期</option></select>
             </div>
           </div>
           <button class="primary-button full" data-action="save-profile">保存我们的信息</button>
@@ -232,7 +232,7 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./tasks.js" defer></script>
-  <script src="./app.js" defer></script>
+  <script src="./tasks.js?v=1.2.2" defer></script>
+  <script src="./app.js?v=1.2.2" defer></script>
 </body>
 </html>
